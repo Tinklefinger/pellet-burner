@@ -20,6 +20,17 @@
 | Blower + Igniter control | Hipzeepo 2-ch AC dimmer module (3.3V logic) | Phase-angle PWM: blower=GPIO33 (DIM1), igniter=GPIO26 (DIM2), zero-cross=GPIO35 (ZC). Snubber + optocouplers built in. |
 | Power supply | HLK-PM01 (AC 220V → DC 5V 1A) | Powers ESP32 (VIN) and relay coils. -Vo = DC common GND. ESP32 3.3V reg powers sensors. [Amazon DE](https://www.amazon.de/HLK-PM01-Haushalt-Netzteilmodul-Power-Supply-2-x/dp/B073QH1XT8) |
 
+## VSCode Extensions (Development Tooling)
+
+| Extension | ID | How it helps |
+|-----------|-----|--------------|
+| ESP-IDF | `espressif.esp-idf-extension` | Build / Flash / Monitor buttons; built-in serial monitor for live ESP32 logs; auto-detects COM port; fixes IntelliSense by pointing VSCode at ESP-IDF headers (run **ESP-IDF: Configure ESP-IDF Extension** once to set up) |
+| C/C++ IntelliSense | `ms-vscode.cpptools` | Jump-to-definition, hover docs, error squiggles in `.cpp`/`.h` files |
+| Wokwi Simulator | `wokwi.wokwi-vscode` | Simulate ESP32 firmware without real hardware — useful for testing state machine logic (Phase 5+) before full wiring is complete. See `hello display` reference project for example setup. |
+| CMake Tools | `ms-vscode.cmake-tools`, `twxs.cmake` | CMake syntax highlighting and project awareness for `CMakeLists.txt` files |
+
+**Division of labour:** Claude writes and edits code. The ESP-IDF extension handles build, flash, and serial monitoring — those require direct hardware access that Claude cannot do.
+
 ## Architecture Decisions
 
 - **Settings UI:** Web UI served directly from ESP32 (no cloud, no subscription). ESP32 hosts an HTML page over WiFi, settings saved to NVS flash.
