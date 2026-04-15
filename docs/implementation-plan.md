@@ -79,8 +79,8 @@ AC wiring should be the last step — do all low-voltage testing first.
 - [ ] Burner states: STANDBY → IGNITING → RUNNING → ECONOMY → COOLING → STANDBY
 - [ ] Power level selection logic (P1/P2/P3 based on temp delta)
 - [ ] Feeder timing task (on/off intervals per active power level)
-- [ ] TRIAC blower control (fan speed % per active power level)
-- [ ] Igniter relay control (IGNITING state only)
+- [ ] AC dimmer CH1 blower control (fan speed % per active power level)
+- [ ] AC dimmer CH2 igniter soft-start: ramp PWM 0→100% over ~1–2 s at IGNITING entry, then hold 100%; 0% on exit
 - [ ] Pump relay control (temp-gated by pump_start_temp)
 - [ ] Economy mode: detect hold at target → shutdown feeder+fan → resume on delta drop
 - [ ] Operation mode enforcement:
