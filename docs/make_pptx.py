@@ -573,50 +573,104 @@ add_bullet_box(slide, [
     "Fuse the AC circuit (5–10A slow blow)",
 ], COL3, ROW2, Inches(4.1), Inches(1.4), size=13)
 
-# Full table
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Slide 10 — Pin Reference Table
+# ══════════════════════════════════════════════════════════════════════════════
+from pptx.oxml.ns import qn
+from lxml import etree
+
+slide = prs.slides.add_slide(BLANK)
+bg_rect(slide)
+
+add_text(slide, "Pin Reference Table", Inches(0.4), Inches(0.15),
+         Inches(9), Inches(0.55), size=28, bold=True, color=ACCENT)
+divider(slide, Inches(0.72))
+
 headers = ["Component", "GPIO", "Protocol", "Voltage", "Notes"]
 rows = [
-    ["SH1106 OLED SDA",    "GPIO21", "I2C",    "3.3V", "addr 0x3C"],
-    ["SH1106 OLED SCL",    "GPIO22", "I2C",    "3.3V", "400 kHz"],
-    ["DS18B20 DATA",       "GPIO4",  "1-Wire", "3.3V", "4.7kΩ pull-up"],
-    ["MAX6675 CS",         "GPIO5",  "SPI",    "3.3V", "dedicated SPI"],
-    ["MAX6675 SCK",        "GPIO18", "SPI",    "3.3V", ""],
-    ["MAX6675 MISO",       "GPIO19", "SPI",    "3.3V", ""],
-    ["Relay Feeder IN",    "GPIO25", "GPIO",   "3.3V", "active LOW"],
-    ["Relay Igniter IN",   "GPIO26", "GPIO",   "3.3V", "active LOW"],
-    ["Relay Pump IN",      "GPIO27", "GPIO",   "3.3V", "active LOW"],
-    ["TRIAC gate",         "GPIO33", "GPIO",   "3.3V", "330Ω + MOC3021"],
-    ["Zero-cross detect",  "GPIO35", "GPIO",   "3.3V", "input only"],
-    ["Button On/Off",      "GPIO13", "GPIO",   "3.3V", "internal pull-up"],
-    ["Button E-Stop",      "GPIO14", "GPIO",   "3.3V", "internal pull-up"],
+    ["SH1106 OLED — SDA",   "GPIO21", "I2C",    "3.3 V", "I2C address 0x3C"],
+    ["SH1106 OLED — SCL",   "GPIO22", "I2C",    "3.3 V", "400 kHz fast-mode"],
+    ["DS18B20 DATA",        "GPIO4",  "1-Wire", "3.3 V", "4.7 kΩ pull-up to 3.3 V"],
+    ["MAX6675 CS",          "GPIO5",  "SPI",    "3.3 V", "dedicated SPI bus"],
+    ["MAX6675 SCK",         "GPIO18", "SPI",    "3.3 V", "max 4.3 MHz"],
+    ["MAX6675 MISO (SO)",   "GPIO19", "SPI",    "3.3 V", "read-only from module"],
+    ["Relay — Feeder IN",   "GPIO25", "GPIO",   "3.3 V", "active LOW, relay VCC = 5 V"],
+    ["Relay — Igniter IN",  "GPIO26", "GPIO",   "3.3 V", "active LOW, relay VCC = 5 V"],
+    ["Relay — Pump IN",     "GPIO27", "GPIO",   "3.3 V", "active LOW, relay VCC = 5 V"],
+    ["TRIAC gate",          "GPIO33", "GPIO",   "3.3 V", "330 Ω → MOC3021 → TRIAC gate"],
+    ["Zero-cross detect",   "GPIO35", "GPIO",   "3.3 V", "input-only pin, falling edge ISR"],
+    ["Button — On/Off",     "GPIO13", "GPIO",   "3.3 V", "internal pull-up, active LOW"],
+    ["Button — E-Stop",     "GPIO14", "GPIO",   "3.3 V", "internal pull-up, active LOW"],
 ]
 
-TBL_TOP  = Inches(5.35)
-TBL_H    = Inches(2.0)
+NUM_ROWS = 1 + len(rows)   # header + data
+NUM_COLS = len(headers)
+
+TBL_LEFT = Inches(0.3)
+TBL_TOP  = Inches(0.9)
 TBL_W    = SLIDE_W - Inches(0.6)
-COL_W    = [TBL_W * f for f in (0.22, 0.10, 0.10, 0.10, 0.48)]
+TBL_H    = SLIDE_H - Inches(1.1)
 
-# header row
-x = Inches(0.3)
-for i, (txt, cw) in enumerate(zip(headers, COL_W)):
-    sh = slide.shapes.add_shape(1, x, TBL_TOP, int(cw), Inches(0.28))
-    sh.fill.solid(); sh.fill.fore_color.rgb = ACCENT; sh.line.fill.background()
-    add_text(slide, txt, x + Inches(0.04), TBL_TOP + Inches(0.02), int(cw), Inches(0.24),
-             size=11, bold=True, color=WHITE)
-    x += int(cw)
+tbl_shape = slide.shapes.add_table(NUM_ROWS, NUM_COLS, TBL_LEFT, TBL_TOP, int(TBL_W), int(TBL_H))
+tbl = tbl_shape.table
 
-row_h = Inches(0.133)
+# Column widths (proportional)
+col_fracs = [0.26, 0.10, 0.10, 0.09, 0.45]
+for ci, frac in enumerate(col_fracs):
+    tbl.columns[ci].width = int(TBL_W * frac)
+
+# Row heights — header taller, data rows equal
+HDR_H  = Inches(0.46)
+DATA_H = int((TBL_H - HDR_H) / len(rows))
+tbl.rows[0].height = int(HDR_H)
+for ri in range(1, NUM_ROWS):
+    tbl.rows[ri].height = DATA_H
+
+
+def set_cell(tbl, ri, ci, text,
+             bold=False, font_size=13,
+             fg=WHITE, bg_color=None, align=PP_ALIGN.LEFT):
+    cell = tbl.cell(ri, ci)
+    cell.text = ""
+    tf = cell.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = align
+    run = p.add_run()
+    run.text = text
+    run.font.size  = Pt(font_size)
+    run.font.bold  = bold
+    run.font.color.rgb = fg
+    # Cell fill
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    solidFill = etree.SubElement(tcPr, qn('a:solidFill'))
+    srgbClr   = etree.SubElement(solidFill, qn('a:srgbClr'))
+    c = bg_color if bg_color else BG
+    srgbClr.set('val', f'{int(c[0]):02X}{int(c[1]):02X}{int(c[2]):02X}')
+    # Remove border lines
+    for side in ('lnL', 'lnR', 'lnT', 'lnB'):
+        ln = etree.SubElement(tcPr, qn(f'a:{side}'))
+        noFill = etree.SubElement(ln, qn('a:noFill'))
+
+
+# Header row
+for ci, hdr in enumerate(headers):
+    set_cell(tbl, 0, ci, hdr, bold=True, font_size=14,
+             fg=WHITE, bg_color=ACCENT, align=PP_ALIGN.CENTER)
+
+# Data rows
+ROW_EVEN = RGBColor(0x0f, 0x34, 0x60)
+ROW_ODD  = CARD
+
 for ri, row in enumerate(rows):
-    y = TBL_TOP + Inches(0.28) + ri * row_h
-    bg = RGBColor(0x0f, 0x34, 0x60) if ri % 2 == 0 else CARD
-    x = Inches(0.3)
-    for ci, (txt, cw) in enumerate(zip(row, COL_W)):
-        sh = slide.shapes.add_shape(1, x, y, int(cw), row_h)
-        sh.fill.solid(); sh.fill.fore_color.rgb = bg; sh.line.fill.background()
-        col = TEAL if ci == 1 else (WHITE if ci != 4 else GREY)
-        add_text(slide, txt, x + Inches(0.04), y, int(cw), row_h,
-                 size=10, color=col)
-        x += int(cw)
+    bg = ROW_EVEN if ri % 2 == 0 else ROW_ODD
+    for ci, val in enumerate(row):
+        if ci == 1:          fg = TEAL       # GPIO column
+        elif ci == 4:        fg = GREY       # Notes column
+        else:                fg = WHITE
+        set_cell(tbl, ri + 1, ci, val, font_size=13, fg=fg, bg_color=bg)
 
 
 # ── Save ──────────────────────────────────────────────────────────────────────
