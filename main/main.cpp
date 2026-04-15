@@ -25,8 +25,7 @@ static void gpioInit()
 {
     // Relay outputs — active LOW, start deactivated (HIGH)
     const gpio_config_t relayCfg = {
-        .pin_bit_mask = (1ULL << PIN_RELAY_FEEDER)  |
-                        (1ULL << PIN_RELAY_IGNITER) |
+        .pin_bit_mask = (1ULL << PIN_RELAY_FEEDER) |
                         (1ULL << PIN_RELAY_PUMP),
         .mode         = GPIO_MODE_OUTPUT,
         .pull_up_en   = GPIO_PULLUP_DISABLE,
@@ -34,20 +33,31 @@ static void gpioInit()
         .intr_type    = GPIO_INTR_DISABLE,
     };
     gpio_config(&relayCfg);
-    gpio_set_level(PIN_RELAY_FEEDER,  1);
-    gpio_set_level(PIN_RELAY_IGNITER, 1);
-    gpio_set_level(PIN_RELAY_PUMP,    1);
+    gpio_set_level(PIN_RELAY_FEEDER, 1);
+    gpio_set_level(PIN_RELAY_PUMP,   1);
 
-    // TRIAC trigger output
-    const gpio_config_t triacCfg = {
-        .pin_bit_mask = (1ULL << PIN_TRIAC),
+    // AC dimmer outputs (DIM1 blower, DIM2 igniter) — start at 0 (off)
+    const gpio_config_t dimmerOutCfg = {
+        .pin_bit_mask = (1ULL << PIN_DIM_BLOWER) |
+                        (1ULL << PIN_DIM_IGNITER),
         .mode         = GPIO_MODE_OUTPUT,
         .pull_up_en   = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type    = GPIO_INTR_DISABLE,
     };
-    gpio_config(&triacCfg);
-    gpio_set_level(PIN_TRIAC, 0);
+    gpio_config(&dimmerOutCfg);
+    gpio_set_level(PIN_DIM_BLOWER,  0);
+    gpio_set_level(PIN_DIM_IGNITER, 0);
+
+    // Zero-cross input — input only, no pull (signal driven by dimmer module)
+    const gpio_config_t zcCfg = {
+        .pin_bit_mask = (1ULL << PIN_ZERO_CROSS),
+        .mode         = GPIO_MODE_INPUT,
+        .pull_up_en   = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type    = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&zcCfg);
 
     // Buttons — active LOW with internal pullup
     const gpio_config_t btnCfg = {
