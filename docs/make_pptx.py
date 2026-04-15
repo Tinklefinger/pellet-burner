@@ -170,7 +170,7 @@ add_text(slide, "Hardware Components & Wiring Guide",
          Inches(1), Inches(3.4), Inches(11.33), Inches(0.7),
          size=26, color=TEAL, align=PP_ALIGN.CENTER)
 add_text(slide,
-         "ESP32  ·  SH1106 OLED  ·  DS18B20  ·  MAX6675  ·  Relays  ·  TRIAC  ·  Buttons",
+         "ESP32  ·  SH1106 OLED  ·  DS18B20  ·  MAX6675  ·  Relays  ·  AC Dimmer  ·  Buttons",
          Inches(1), Inches(4.2), Inches(11.33), Inches(0.5),
          size=15, color=GREY, align=PP_ALIGN.CENTER)
 
@@ -199,7 +199,7 @@ SPECS = [
     "## Role in this project",
     "Main controller — FreeRTOS tasks",
     "HTTP web server for settings UI",
-    "Controls relays and TRIAC output",
+    "Controls relays and AC dimmer module",
     "Reads DS18B20 and MAX6675 sensors",
     "Drives OLED display over I2C",
 ]
@@ -227,9 +227,9 @@ GPIO_LINES = [
     "GPIO21  OLED SDA (I2C)",
     "GPIO22  OLED SCL (I2C)",
     "GPIO25  Relay — Feeder motor",
-    "GPIO26  Relay — Igniter",
+    "GPIO26  Dimmer CH2 — Igniter",
     "GPIO27  Relay — Water pump",
-    "GPIO33  TRIAC gate trigger",
+    "GPIO33  Dimmer CH1 — Blower",
     "GPIO35  Zero-cross detect (input)",
     "GPIO13  Button: On/Off",
     "GPIO14  Button: Emergency stop",
@@ -415,7 +415,7 @@ add_bullet_box(slide, ROLE5, size=13,
 # ══════════════════════════════════════════════════════════════════════════════
 slide = prs.slides.add_slide(BLANK)
 bg_rect(slide)
-slide_title(slide, "5V Relay Modules  —  Feeder / Igniter / Pump")
+slide_title(slide, "5V Relay Modules  —  Feeder / Pump")
 
 place_image(slide, os.path.join(IMG_DIR, "relay.jpg"),
             Inches(9.55), Inches(0.88), Inches(3.4), Inches(3.2), "5V Relay Module")
@@ -428,6 +428,9 @@ SPECS6 = [
     "Isolation: optocoupler (ESP32 ↔ coil)",
     "Flyback diode: included on module",
     "Indicator LED per channel",
+    "## Note",
+    "Igniter is now on AC dimmer CH2 — not a relay.",
+    "Only 2 relay modules needed for this build.",
 ]
 specs6_h = ch(SPECS6)
 add_bullet_box(slide, SPECS6,
@@ -437,7 +440,6 @@ relay_row_y = Inches(0.82) + specs6_h + Inches(0.14)
 
 for i, (name, gpio, desc) in enumerate([
     ("Feeder Motor", "GPIO25", "Pellet auger / conveyor"),
-    ("Igniter",      "GPIO26", "Electric heating element"),
     ("Water Pump",   "GPIO27", "Circulation pump"),
 ]):
     RL = [
@@ -461,6 +463,9 @@ SAFETY6 = [
     "## Safety",
     "All relays default OFF on power-up",
     "Emergency stop: all GPIOs → HIGH",
+    "## Decoupling",
+    "100 nF ceramic cap across VCC/GND",
+    "at each relay module — prevents spikes",
 ]
 add_bullet_box(slide, SAFETY6, size=13,
                x=Inches(9.55), y=relay_row_y,
@@ -472,47 +477,44 @@ add_bullet_box(slide, SAFETY6, size=13,
 # ══════════════════════════════════════════════════════════════════════════════
 slide = prs.slides.add_slide(BLANK)
 bg_rect(slide)
-slide_title(slide, "TRIAC Dimmer  —  Blower Motor Speed Control")
+slide_title(slide, "2-Channel AC Dimmer  —  Blower & Igniter")
 
-place_image(slide, os.path.join(IMG_DIR, "triac.jpg"),
-            Inches(9.55), Inches(0.88), Inches(3.4), Inches(3.8), "TRIAC / AC Dimmer")
+place_image(slide, os.path.join(IMG_DIR, "dimmer.jpg"),
+            Inches(9.55), Inches(0.88), Inches(3.4), Inches(3.8), "Hipzeepo 2-ch Dimmer")
 
-METHOD = [
-    "## Method: Phase-angle control",
-    "The AC waveform is chopped each half-cycle.",
-    "TRIAC fires later in the cycle → less power.",
-    "Zero-cross detector tells ESP32 exactly when",
-    "the AC wave crosses 0V.",
-    "ESP32 waits N µs, then pulses the TRIAC gate",
-    "→ conducts for the rest of the half-cycle.",
-    "Larger delay = lower fan speed.",
-    "Delay = 0 = full power.",
-    "## Typical components",
-    "BT136 or BTA16 TRIAC (TO-220)",
-    "MOC3021 optocoupler (gate isolation)",
-    "4N35 optocoupler (zero-cross isolation)",
-    "Snubber: 100Ω + 100nF/400V across TRIAC",
-    "Gate resistor: 330Ω before MOC3021",
+MODULE = [
+    "## Module: Hipzeepo 2-Channel AC Dimmer",
+    "3.3V / 5V logic  ·  110V / 220V AC load",
+    "Phase-angle control — variable AC power",
+    "## Built into the module (no discrete parts needed)",
+    "TRIAC × 2 (one per channel)",
+    "Optocouplers for gate isolation",
+    "Snubber circuits per channel",
+    "Zero-cross detector (shared ZC output)",
+    "## Control method",
+    "PWM duty → phase angle → AC power %",
+    "CH1 (blower): 0–100% fan speed",
+    "CH2 (igniter): 0% = off, 100% = full heat",
 ]
-add_bullet_box(slide, METHOD, size=13,
+add_bullet_box(slide, MODULE, size=13,
                x=Inches(0.3), y=Inches(0.82),
-               w=Inches(5.4), h=ch(METHOD, size=13))
+               w=Inches(5.4), h=ch(MODULE, size=13))
 
 WIRE7 = [
-    "## Zero-cross input",
-    "GPIO35  ←  Zero-cross signal",
-    "(GPIO35 is input-only on ESP32)",
-    "Signal: HIGH normally, drops LOW at",
-    "each zero crossing of the AC wave",
-    "Trigger ISR on falling edge",
-    "## TRIAC gate output",
-    "GPIO33  →  330Ω  →  MOC3021 LED(+)",
-    "MOC3021 output  →  TRIAC gate",
-    "## Voltage levels",
-    "ESP32 side: 3.3V logic (optocoupled)",
-    "AC side: 230V AC — HIGH VOLTAGE",
-    "Keep AC and DC wiring separated",
-    "Fuse the AC circuit (5–10A slow blow)",
+    "## DC logic side — wiring to ESP32",
+    "VCC  →  3.3V (or 5V)",
+    "GND  →  GND bus",
+    "ZC   →  GPIO35  (zero-cross, shared output)",
+    "DIM1 →  GPIO33  (CH1 — blower motor)",
+    "DIM2 →  GPIO26  (CH2 — igniter heater)",
+    "## AC load side",
+    "CH1 OUT  →  Blower motor (220V AC)",
+    "CH2 OUT  →  Igniter heater (220V AC)",
+    "AC IN    →  Mains L + N (via 5–10A fuse)",
+    "## Safety",
+    "AC side: 230V — HIGH VOLTAGE",
+    "Keep AC and DC wiring physically separated",
+    "Fuse live wire before module AC IN",
 ]
 add_bullet_box(slide, WIRE7, size=13,
                x=Inches(5.85), y=Inches(0.82),
@@ -608,11 +610,12 @@ SPI = [
 RELAYS = [
     "## Relay outputs  (active LOW)",
     "GPIO25 → Relay IN — Feeder motor",
-    "GPIO26 → Relay IN — Igniter",
-    "GPIO27 → Relay IN — Pump",
+    "GPIO27 → Relay IN — Water pump",
     "Relay VCC → 5V   GND → GND",
-    "## TRIAC gate",
-    "GPIO33 → 330Ω → MOC3021 → TRIAC",
+    "## AC Dimmer  (2-ch Hipzeepo module)",
+    "GPIO35 ← ZC   zero-cross in",
+    "GPIO33 → DIM1  blower speed",
+    "GPIO26 → DIM2  igniter on/off",
 ]
 
 row1_h = ch(I2C)
@@ -629,15 +632,16 @@ BTNS = [
 ]
 PWR = [
     "## Power rails",
-    "3.3V: ESP32 reg, OLED, DS18B20, MAX6675",
-    "5V: Relay module VCC",
-    "AC 230V: TRIAC load side — isolated",
+    "3.3V: ESP32 reg → OLED, sensors, dimmer",
+    "5V (HLK-PM01): relay VCC, ESP32 VIN",
+    "AC 230V: dimmer load side — isolated",
 ]
 SAFE = [
     "## Safety reminders",
     "Never connect 5V to ESP32 3.3V rail",
-    "Optocouplers required on TRIAC side",
-    "Fuse the AC circuit (5–10A slow blow)",
+    "Dimmer module has built-in optocouplers",
+    "Fuse AC input (5–10A slow blow)",
+    "Do AC wiring last — verify logic first",
 ]
 add_bullet_box(slide, BTNS, COL1, ROW2_Y, Inches(4.1), ch(BTNS))
 add_bullet_box(slide, PWR,  COL2, ROW2_Y, Inches(4.1), ch(PWR))
@@ -660,9 +664,9 @@ rows = [
     ["MAX6675 SCK",         "GPIO18", "SPI",    "3.3 V", "max 4.3 MHz"],
     ["MAX6675 MISO (SO)",   "GPIO19", "SPI",    "3.3 V", "read-only from module"],
     ["Relay — Feeder IN",   "GPIO25", "GPIO",   "3.3 V", "active LOW, relay VCC = 5 V"],
-    ["Relay — Igniter IN",  "GPIO26", "GPIO",   "3.3 V", "active LOW, relay VCC = 5 V"],
+    ["Dimmer CH2 — Igniter","GPIO26", "PWM",    "3.3 V", "DIM2 on 2-ch AC dimmer module"],
     ["Relay — Pump IN",     "GPIO27", "GPIO",   "3.3 V", "active LOW, relay VCC = 5 V"],
-    ["TRIAC gate",          "GPIO33", "GPIO",   "3.3 V", "330 Ω → MOC3021 → TRIAC gate"],
+    ["Dimmer CH1 — Blower", "GPIO33", "PWM",    "3.3 V", "DIM1 on 2-ch AC dimmer module"],
     ["Zero-cross detect",   "GPIO35", "GPIO",   "3.3 V", "input-only pin, falling edge ISR"],
     ["Button — On/Off",     "GPIO13", "GPIO",   "3.3 V", "internal pull-up, active LOW"],
     ["Button — E-Stop",     "GPIO14", "GPIO",   "3.3 V", "internal pull-up, active LOW"],

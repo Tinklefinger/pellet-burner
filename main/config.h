@@ -4,12 +4,13 @@
 
 // ── Relay outputs (active LOW) ────────────────────────────────────────────────
 #define PIN_RELAY_FEEDER    GPIO_NUM_25   // Feeder reductor motor
-#define PIN_RELAY_IGNITER   GPIO_NUM_26   // Igniter heater
 #define PIN_RELAY_PUMP      GPIO_NUM_27   // Water pump
 
-// ── Blower TRIAC dimmer ───────────────────────────────────────────────────────
-#define PIN_ZERO_CROSS      GPIO_NUM_35   // AC zero-cross detection (input only)
-#define PIN_TRIAC           GPIO_NUM_33   // TRIAC gate trigger
+// ── 2-channel AC dimmer module (3.3V logic, PWM input) ───────────────────────
+// Module: Hipzeepo 2-ch AC Light Dimmer, 3.3V/5V logic, 110/220V AC
+#define PIN_ZERO_CROSS      GPIO_NUM_35   // Shared zero-cross output → ZC pin (input only)
+#define PIN_DIM_BLOWER      GPIO_NUM_33   // Channel 1 → DIM1  — blower motor speed
+#define PIN_DIM_IGNITER     GPIO_NUM_26   // Channel 2 → DIM2  — igniter heater power
 
 // ── Temperature sensors ───────────────────────────────────────────────────────
 #define PIN_DS18B20         GPIO_NUM_4    // OneWire — water temperature

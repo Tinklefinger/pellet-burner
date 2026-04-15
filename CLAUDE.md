@@ -16,8 +16,8 @@
 | Buttons | 2× physical | On/off and emergency stop only — settings via web UI |
 | Water temp sensor | DS18B20 | OneWire, GPIO4, 4.7kΩ pull-up to 3.3V |
 | Flame temp sensor | MAX6675 + K-type thermocouple | SPI (CS=GPIO5, SCK=GPIO18, MISO=GPIO19) |
-| Relays | 3× 5V relay module | Feeder=GPIO25, Igniter=GPIO26, Pump=GPIO27 — active LOW, VCC=5V |
-| Blower control | TRIAC dimmer (BT136 + MOC3021) | Phase-angle control, gate=GPIO33, zero-cross=GPIO35 |
+| Relays | 2× 5V relay module | Feeder=GPIO25, Pump=GPIO27 — active LOW, VCC=5V |
+| Blower + Igniter control | Hipzeepo 2-ch AC dimmer module (3.3V logic) | Phase-angle PWM: blower=GPIO33 (DIM1), igniter=GPIO26 (DIM2), zero-cross=GPIO35 (ZC). Snubber + optocouplers built in. |
 | Power supply | HLK-PM01 (AC 220V → DC 5V 1A) | Powers ESP32 (VIN) and relay coils. -Vo = DC common GND. ESP32 3.3V reg powers sensors. [Amazon DE](https://www.amazon.de/HLK-PM01-Haushalt-Netzteilmodul-Power-Supply-2-x/dp/B073QH1XT8) |
 
 ## Architecture Decisions
