@@ -50,7 +50,7 @@ def content_h(lines, size=14, title=None):
             continue
         is_head = line.startswith("##")
         sz = (size - 1) if is_head else size
-        h += _line_h(sz)
+        h += _line_h(sz) + 0.06   # match the textbox height in add_bullet_box
     h += 0.12                           # bottom padding
     return h
 
@@ -119,11 +119,11 @@ def add_bullet_box(slide, lines, x, y, w, h, size=14, title=None):
         txt = line.lstrip("#>").strip()
         col = TEAL if is_head else (HIGHLIGHT if is_val else WHITE)
         sz  = (size - 1) if is_head else size
-        lh  = Inches(_line_h(sz))
+        lh  = Inches(_line_h(sz)) + Inches(0.06)
         prefix = "" if (is_head or is_val) else "• "
         add_text(slide, prefix + txt,
                  x + Inches(0.18), cur_y,
-                 w - Inches(0.36), lh + Inches(0.06),
+                 w - Inches(0.36), lh,
                  size=sz, bold=is_head, color=col)
         cur_y += lh
 
