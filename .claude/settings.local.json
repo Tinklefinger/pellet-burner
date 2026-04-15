@@ -61,7 +61,12 @@
       "WebFetch(domain:arduinogetstarted.com)",
       "WebFetch(domain:www.instructables.com)",
       "Bash(C:/msys64/ucrt64/bin/python3 make_pptx.py)",
-      "Bash(gh repo:*)"
+      "Bash(gh repo:*)",
+      "Bash(code --install-extension astx-jp.vscode-pptx-viewer)",
+      "Bash(code-insiders --install-extension astx-jp.vscode-pptx-viewer)",
+      "Bash(powershell -Command '& '\\\\''$env:LOCALAPPDATA\\\\Programs\\\\Microsoft VS Code\\\\bin\\\\code.cmd'\\\\'' --install-extension astx-jp.vscode-pptx-viewer')",
+      "Bash(powershell -Command '& \\(Join-Path $env:LOCALAPPDATA '\\\\''Programs\\\\Microsoft VS Code\\\\bin\\\\code.cmd'\\\\''\\) --install-extension astx-jp.vscode-pptx-viewer')",
+      "WebFetch(domain:www.amazon.de)"
     ],
     "defaultMode": "bypassPermissions"
   }
