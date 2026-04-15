@@ -20,6 +20,45 @@
 | Blower + Igniter control | Hipzeepo 2-ch AC dimmer module (3.3V logic) | Phase-angle PWM: blower=GPIO33 (DIM1), igniter=GPIO26 (DIM2), zero-cross=GPIO35 (ZC). Snubber + optocouplers built in. |
 | Power supply | HLK-PM01 (AC 220V → DC 5V 1A) | Powers ESP32 (VIN) and relay coils. -Vo = DC common GND. ESP32 3.3V reg powers sensors. [Amazon DE](https://www.amazon.de/HLK-PM01-Haushalt-Netzteilmodul-Power-Supply-2-x/dp/B073QH1XT8) |
 
+## ESP32 DevKit V1 — 30-Pin Layout
+
+Exact pin order for this board (top = USB connector end):
+
+```
+         [ USB ]
+LEFT                        RIGHT
+────────────────────────────────────────
+VIN                              3V3
+GND                              GND
+GPIO13  ← OnOff button           GPIO15  ⚠️ bootstrap — avoid
+GPIO12  ⚠️ bootstrap — avoid      GPIO2   ⚠️ bootstrap — avoid
+GPIO14  ← E-Stop button          GPIO4   ← DS18B20 data
+GPIO27  ← Pump relay             GPIO16  (free)
+GPIO26  ← Dimmer CH2 igniter     GPIO17  (free)
+GPIO25  ← Feeder relay           GPIO5   ← MAX6675 CS
+GPIO33  ← Dimmer CH1 blower      GPIO18  ← MAX6675 SCK
+GPIO32  (free)                   GPIO19  ← MAX6675 MISO
+GPIO35* ← Zero-cross detect      GPIO21  ← OLED SDA
+GPIO34* (free, input-only)       GPIO3   (RX0 — reserved)
+GPIO39* (free, input-only)       GPIO1   (TX0 — reserved)
+GPIO36* (free, input-only)       GPIO22  ← OLED SCL
+                                 GPIO23  (free)
+────────────────────────────────────────
+  (* = input-only, no internal pull-up/down)
+  ⚠️ GPIO12/15: bootstrap pins — leave unconnected or ensure LOW at boot
+  ⚠️ GPIO0/2: boot-mode pins — avoid for outputs
+  GPIO1/3: UART0 TX/RX — used by serial monitor, avoid for other use
+```
+
+**Peripheral side grouping (current assignments are already optimal):**
+
+| Side | Peripherals |
+|------|-------------|
+| LEFT | Buttons (13, 14), Feeder relay (25), Pump relay (27), AC Dimmer (26, 33, 35) |
+| RIGHT | DS18B20 (4), MAX6675 SPI (5, 18, 19), OLED I2C (21, 22) |
+
+All wires to each peripheral land on the same side — no cross-side wiring needed.
+
 ## VSCode Extensions (Development Tooling)
 
 | Extension | ID | How it helps |
