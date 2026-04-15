@@ -127,7 +127,7 @@ No discrete gate resistors, snubber caps, or optocouplers needed — they are al
 | GND | GND bus | — |
 | ZC (zero-cross) | GPIO 35 | — shared output, falling edge ISR |
 | DIM1 | GPIO 33 | Blower motor — variable speed (PWM) |
-| DIM2 | GPIO 26 | Igniter heater — soft-start ramp 0→100% over ~1–2 s, then full power |
+| DIM2 | GPIO 26 | Igniter heater — soft-start ramp 0→100% over 4 s, then full power |
 | CH1 OUT (AC) | Blower motor terminals | 220V AC switched |
 | CH2 OUT (AC) | Igniter heater terminals | 220V AC switched |
 | AC IN | Mains L + N (via fuse) | Shared AC input for both channels |
@@ -136,7 +136,7 @@ No discrete gate resistors, snubber caps, or optocouplers needed — they are al
 
 **Firmware behaviour:**
 - Blower: PWM duty cycle = fan speed % (0–100), continuously variable
-- Igniter: soft-start ramp from 0% → 100% over ~1–2 seconds at ignition start,
+- Igniter: soft-start ramp from 0% → 100% over 4 seconds at ignition start,
   then holds at 100% for the remainder of the IGNITING state.
   Purpose: limits inrush current on a cold heating element (cold coil resistance
   is much lower → instant full-power causes a large current spike on the TRIAC and fuse).

@@ -494,7 +494,7 @@ MODULE = [
     "## Control method",
     "PWM duty → phase angle → AC power %",
     "CH1 (blower): 0–100% continuously variable fan speed",
-    "CH2 (igniter): soft-start ramp 0→100% over ~1–2 s,",
+    "CH2 (igniter): soft-start ramp 0→100% over 4 s,",
     "  then holds at 100% — limits inrush on cold coil",
 ]
 add_bullet_box(slide, MODULE, size=13,

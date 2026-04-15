@@ -10,7 +10,7 @@
 // Module: Hipzeepo 2-ch AC Light Dimmer, 3.3V/5V logic, 110/220V AC
 #define PIN_ZERO_CROSS      GPIO_NUM_35   // Shared zero-cross output → ZC pin (input only)
 #define PIN_DIM_BLOWER      GPIO_NUM_33   // Channel 1 → DIM1  — blower motor speed
-#define PIN_DIM_IGNITER     GPIO_NUM_26   // Channel 2 → DIM2  — igniter soft-start (ramp 0→100% over ~1-2s)
+#define PIN_DIM_IGNITER     GPIO_NUM_26   // Channel 2 → DIM2  — igniter soft-start (ramp 0→100% over IGNITER_SOFTSTART_MS)
 
 // ── Temperature sensors ───────────────────────────────────────────────────────
 #define PIN_DS18B20         GPIO_NUM_4    // OneWire — water temperature
@@ -56,6 +56,9 @@
 // ── Default power thresholds ──────────────────────────────────────────────────
 #define DEFAULT_P1_THRESHOLD        5.0f    // °C below target → Power 1
 #define DEFAULT_P3_THRESHOLD        15.0f   // °C below target → Power 3
+
+// ── Igniter soft-start ───────────────────────────────────────────────────────
+#define IGNITER_SOFTSTART_MS        4000    // ms — ramp 0→100% duration at IGNITING entry
 
 // ── Default economy mode ──────────────────────────────────────────────────────
 #define DEFAULT_ECONOMY_HOLD_TIME   300     // sec at target before shutdown
