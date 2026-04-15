@@ -1,0 +1,15 @@
+menu "Pellet Burner Configuration"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "your_ssid"
+        help
+            WiFi network name to connect to.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "your_password"
+        help
+            WiFi network password.
+
+endmenu

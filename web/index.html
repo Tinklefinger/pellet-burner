@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pellet Burner</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:12px}
+h1{margin:0 0 12px;color:#e94560;font-size:1.4em}
+.card{background:#16213e;border-radius:8px;padding:14px;margin-bottom:12px}
+h2{margin:0 0 10px;font-size:.95em;color:#a8dadc;text-transform:uppercase;letter-spacing:.05em}
+h3{margin:8px 0 6px;font-size:.85em;color:#7ec8c8}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.item{background:#0f3460;border-radius:6px;padding:10px;text-align:center}
+.lbl{font-size:.7em;color:#aaa}
+.val{font-size:1.2em;font-weight:bold;margin-top:3px}
+.on{color:#4caf50}.off{color:#f44336}
+label{display:block;margin:6px 0 2px;font-size:.82em;color:#aaa}
+input,select{width:100%;background:#0f3460;border:1px solid #1a4a8a;color:#eee;padding:7px;border-radius:4px;font-size:.95em}
+select option{background:#0f3460}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+button{width:100%;background:#e94560;color:#fff;border:none;padding:11px;border-radius:6px;font-size:1em;cursor:pointer;margin-top:10px}
+button:active{background:#c73652}
+.badge{display:inline-block;background:#0f3460;border-radius:20px;padding:3px 12px;font-size:.9em}
+.sep{border:none;border-top:1px solid #0f3460;margin:10px 0}
+.dev-banner{background:#2d4a00;color:#aaff66;text-align:center;padding:6px;border-radius:6px;margin-bottom:10px;font-size:.8em}
+/* Timer preset radio selector */
+.preset-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.preset-row input[type=radio]{display:none}
+.preset-radio{width:20px;height:20px;border-radius:50%;border:2px solid #1a4a8a;background:#0f3460;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
+.preset-radio::after{content:'';width:10px;height:10px;border-radius:50%;background:#a8dadc;display:none}
+input[type=radio]:checked + .preset-radio{border-color:#a8dadc}
+input[type=radio]:checked + .preset-radio::after{display:block}
+.preset-label{font-size:.9em;font-weight:bold;color:#a8dadc;user-select:none;cursor:pointer}
+/* Dimmed state for timer card when not in Timer mode */
+.card-disabled{opacity:.35;pointer-events:none}
+</style>
+</head>
+<body>
+
+<!-- DEV_ONLY_START -->
+<div class="dev-banner">&#x1F6E0; Dev Preview — API responses are mocked</div>
+<script>
+const MOCK_STATUS = {
+  water_temp: 62.5, flame_temp: 480.0,
+  flame_on: true, pump_on: true, feeder_on: false, igniter_on: false,
+  blower_speed: 60, state: "RUNNING"
+};
+const MOCK_SETTINGS = {
+  target_temp: 75, op_mode: 1, active_preset: 0,
+  p1_fan: 30,  p1_fon: 5,  p1_foff: 60,
+  p2_fan: 60,  p2_fon: 8,  p2_foff: 45,
+  p3_fan: 100, p3_fon: 12, p3_foff: 30,
+  p1_thresh: 5.0, p3_thresh: 15.0,
+  eco_hold: 300, eco_resume: 5.0,
+  pump_start: 45.0,
+  t0_sh: 18, t0_sm: 0,  t0_eh: 9,  t0_em: 0,
+  t1_sh: 7,  t1_sm: 0,  t1_eh: 22, t1_em: 0,
+  t2_sh: 6,  t2_sm: 30, t2_eh: 8,  t2_em: 0,
+  wifi_ssid: "MyHomeWiFi"
+};
+const _fetch = window.fetch.bind(window);
+window.fetch = function(url, opts) {
+  if (url === '/api/status')
+    return Promise.resolve({ json: () => Promise.resolve(MOCK_STATUS) });
+  if (url === '/api/settings' && (!opts || opts.method !== 'POST'))
+    return Promise.resolve({ json: () => Promise.resolve(MOCK_SETTINGS) });
+  if (url === '/api/settings' && opts && opts.method === 'POST') {
+    console.log('POST /api/settings', Object.fromEntries(new URLSearchParams(opts.body)));
+    return Promise.resolve({ json: () => Promise.resolve({ ok: true }) });
+  }
+  return _fetch(url, opts);
+};
+</script>
+<!-- DEV_ONLY_END -->
+
+<h1>Pellet Burner</h1>
+
+<!-- Status -->
+<div class="card"><h2>Live Status</h2>
+  <div class="grid">
+    <div class="item"><div class="lbl">Water Temp</div><div class="val" id="wt">--</div></div>
+    <div class="item"><div class="lbl">Flame Temp</div><div class="val" id="ft">--</div></div>
+    <div class="item"><div class="lbl">Flame</div><div class="val" id="fl">--</div></div>
+    <div class="item"><div class="lbl">Pump</div><div class="val" id="pu">--</div></div>
+    <div class="item"><div class="lbl">Feeder</div><div class="val" id="fe">--</div></div>
+    <div class="item"><div class="lbl">Blower</div><div class="val" id="bl">--</div></div>
+  </div>
+  <div style="text-align:center;margin-top:10px">
+    <span class="badge" id="st">--</span>
+  </div>
+</div>
+
+<!-- Settings form -->
+<form id="sf">
+
+  <!-- General -->
+  <div class="card"><h2>General</h2>
+    <label>Target Temperature (°C)</label>
+    <input type="number" name="target_temp" id="tt" min="40" max="90" step="1">
+    <label>Operation Mode</label>
+    <select name="op_mode" id="om">
+      <option value="0">Standby</option>
+      <option value="1">Automatic</option>
+      <option value="2">Timer</option>
+    </select>
+  </div>
+
+  <!-- Power Levels -->
+  <div class="card"><h2>Power Levels</h2>
+    <div class="row3">
+      <div><b style="color:#a8dadc">P1 — Weak</b></div>
+      <div><b style="color:#a8dadc">P2 — Medium</b></div>
+      <div><b style="color:#a8dadc">P3 — Full</b></div>
+    </div>
+    <label>Fan Speed (%)</label>
+    <div class="row3">
+      <input type="number" name="p1_fan"  id="p1f"   min="0" max="100" step="5">
+      <input type="number" name="p2_fan"  id="p2f"   min="0" max="100" step="5">
+      <input type="number" name="p3_fan"  id="p3f"   min="0" max="100" step="5">
+    </div>
+    <label>Feeder ON (sec)</label>
+    <div class="row3">
+      <input type="number" name="p1_fon"  id="p1on"  min="1" max="60">
+      <input type="number" name="p2_fon"  id="p2on"  min="1" max="60">
+      <input type="number" name="p3_fon"  id="p3on"  min="1" max="60">
+    </div>
+    <label>Feeder OFF (sec)</label>
+    <div class="row3">
+      <input type="number" name="p1_foff" id="p1off" min="5" max="300">
+      <input type="number" name="p2_foff" id="p2off" min="5" max="300">
+      <input type="number" name="p3_foff" id="p3off" min="5" max="300">
+    </div>
+    <hr class="sep">
+    <div style="font-size:.75em;color:#888;margin-bottom:6px">Power zone boundaries (°C below target): P3 &gt; p3_thresh &gt; P2 &gt; p1_thresh &gt; P1</div>
+    <div class="row">
+      <div>
+        <label>P2 → P1 switch (°C below target)</label>
+        <input type="number" name="p1_thresh" id="p1th" min="1" max="30" step="0.5">
+      </div>
+      <div>
+        <label>P3 → P2 switch (°C below target)</label>
+        <input type="number" name="p3_thresh" id="p3th" min="5" max="50" step="0.5">
+      </div>
+    </div>
+  </div>
+
+  <!-- Economy -->
+  <div class="card"><h2>Economy Mode</h2>
+    <div class="row">
+      <div>
+        <label>Hold time at target (sec)</label>
+        <input type="number" name="eco_hold" id="eh" min="60" max="3600">
+      </div>
+      <div>
+        <label>Resume delta (°C below target)</label>
+        <input type="number" name="eco_resume" id="er" min="1" max="20" step="0.5">
+      </div>
+    </div>
+  </div>
+
+  <!-- Pump -->
+  <div class="card"><h2>Pump</h2>
+    <label>Minimum water temperature to start pump (°C)</label>
+    <input type="number" name="pump_start" id="ps" min="20" max="80" step="1">
+  </div>
+
+  <!-- Timer Presets -->
+  <div class="card" id="timer-card"><h2>Timer Presets</h2>
+
+    <!-- hidden field carries active_preset value -->
+    <input type="hidden" name="active_preset" id="ap" value="0">
+
+    <div class="preset-row">
+      <input type="radio" name="_preset_sel" id="pr0" value="0" checked onchange="selectPreset(0)">
+      <label class="preset-radio" for="pr0"></label>
+      <label class="preset-label" for="pr0">Preset A</label>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div><label>Start</label><input type="time" name="ta_start" id="tas"></div>
+      <div><label>End</label>  <input type="time" name="ta_end"   id="tae"></div>
+    </div>
+
+    <div class="preset-row">
+      <input type="radio" name="_preset_sel" id="pr1" value="1" onchange="selectPreset(1)">
+      <label class="preset-radio" for="pr1"></label>
+      <label class="preset-label" for="pr1">Preset B</label>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div><label>Start</label><input type="time" name="tb_start" id="tbs"></div>
+      <div><label>End</label>  <input type="time" name="tb_end"   id="tbe"></div>
+    </div>
+
+    <div class="preset-row">
+      <input type="radio" name="_preset_sel" id="pr2" value="2" onchange="selectPreset(2)">
+      <label class="preset-radio" for="pr2"></label>
+      <label class="preset-label" for="pr2">Preset C</label>
+    </div>
+    <div class="row">
+      <div><label>Start</label><input type="time" name="tc_start" id="tcs"></div>
+      <div><label>End</label>  <input type="time" name="tc_end"   id="tce"></div>
+    </div>
+
+  </div>
+
+  <!-- WiFi -->
+  <div class="card"><h2>WiFi</h2>
+    <label>SSID</label>
+    <input type="text"     name="wifi_ssid" id="ws" maxlength="31">
+    <label>Password</label>
+    <input type="password" name="wifi_pass" id="wp" maxlength="63">
+  </div>
+
+  <button type="submit">Save Settings</button>
+</form>
+
+<script>
+function oo(v) { return v ? "<span class='on'>ON</span>" : "<span class='off'>OFF</span>"; }
+function hm(h, m) { return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
+
+function selectPreset(n) { document.getElementById('ap').value = n; }
+
+function updateTimerCard() {
+  var isTimer = document.getElementById('om').value === '2';
+  document.getElementById('timer-card').classList.toggle('card-disabled', !isTimer);
+}
+
+document.getElementById('om').addEventListener('change', updateTimerCard);
+
+function poll() {
+  fetch('/api/status').then(r => r.json()).then(d => {
+    document.getElementById('wt').textContent = d.water_temp.toFixed(1) + '°C';
+    document.getElementById('ft').textContent = d.flame_temp.toFixed(1) + '°C';
+    document.getElementById('fl').innerHTML   = oo(d.flame_on);
+    document.getElementById('pu').innerHTML   = oo(d.pump_on);
+    document.getElementById('fe').innerHTML   = oo(d.feeder_on);
+    document.getElementById('bl').textContent = d.blower_speed + '%';
+    document.getElementById('st').textContent = d.state;
+  }).catch(() => {});
+}
+
+function loadSettings() {
+  fetch('/api/settings').then(r => r.json()).then(d => {
+    document.getElementById('tt').value   = d.target_temp;
+    document.getElementById('om').value   = d.op_mode;
+    document.getElementById('ap').value   = d.active_preset;
+    document.getElementById('p1f').value  = d.p1_fan;
+    document.getElementById('p1on').value = d.p1_fon;
+    document.getElementById('p1off').value= d.p1_foff;
+    document.getElementById('p2f').value  = d.p2_fan;
+    document.getElementById('p2on').value = d.p2_fon;
+    document.getElementById('p2off').value= d.p2_foff;
+    document.getElementById('p3f').value  = d.p3_fan;
+    document.getElementById('p3on').value = d.p3_fon;
+    document.getElementById('p3off').value= d.p3_foff;
+    document.getElementById('p1th').value = d.p1_thresh;
+    document.getElementById('p3th').value = d.p3_thresh;
+    document.getElementById('eh').value   = d.eco_hold;
+    document.getElementById('er').value   = d.eco_resume;
+    document.getElementById('ps').value   = d.pump_start;
+    document.getElementById('tas').value  = hm(d.t0_sh, d.t0_sm);
+    document.getElementById('tae').value  = hm(d.t0_eh, d.t0_em);
+    document.getElementById('tbs').value  = hm(d.t1_sh, d.t1_sm);
+    document.getElementById('tbe').value  = hm(d.t1_eh, d.t1_em);
+    document.getElementById('tcs').value  = hm(d.t2_sh, d.t2_sm);
+    document.getElementById('tce').value  = hm(d.t2_eh, d.t2_em);
+    document.getElementById('ws').value   = d.wifi_ssid;
+    // Set active preset radio button
+    var pr = document.getElementById('pr' + d.active_preset);
+    if (pr) { pr.checked = true; selectPreset(d.active_preset); }
+    updateTimerCard();
+  }).catch(() => {});
+}
+
+document.getElementById('sf').addEventListener('submit', function(e) {
+  e.preventDefault();
+  fetch('/api/settings', { method: 'POST', body: new URLSearchParams(new FormData(this)) })
+    .then(r => r.json())
+    .then(d => alert(d.ok ? 'Settings saved!' : 'Error saving'));
+});
+
+poll();
+loadSettings();
+updateTimerCard();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>
