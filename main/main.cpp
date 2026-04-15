@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "wifi.h"
 #include "webserver.h"
+#include "sensors.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -15,6 +16,9 @@ Settings     g_settings;
 BurnerStatus g_status;
 WiFiManager  g_wifi;
 WebServer    g_webserver;
+
+static DS18B20 g_ds18b20(PIN_DS18B20);
+static MAX6675 g_max6675(PIN_MAX6675_CS, PIN_MAX6675_SCK, PIN_MAX6675_MISO);
 
 // ── GPIO init ─────────────────────────────────────────────────────────────────
 static void gpioInit()
@@ -58,13 +62,27 @@ static void gpioInit()
     ESP_LOGI(TAG, "GPIO initialised");
 }
 
-// ── Sensor task (stub — replace with real DS18B20 + MAX6675 reads) ────────────
+// ── Sensor task ───────────────────────────────────────────────────────────────
+// DS18B20::read() blocks ~750 ms for the conversion, so the loop runs at
+// roughly 1 s per cycle (750 ms conversion + 250 ms delay).
 static void sensorTask(void *)
 {
+    float t;
     while (true) {
-        // TODO: read DS18B20  → g_status.water_temp
-        // TODO: read MAX6675  → g_status.flame_temp, g_status.flame_on
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        // Water temperature — DS18B20 (OneWire)
+        if (g_ds18b20.read(t))
+            g_status.water_temp = t;
+
+        // Flame temperature — MAX6675 (K-type thermocouple)
+        // MAX6675 needs ≥220 ms between reads; DS18B20 conversion above provides this.
+        if (g_max6675.read(t)) {
+            g_status.flame_temp = t;
+            g_status.flame_on   = (t > 100.0f);  // flame present above 100 °C
+        } else {
+            g_status.flame_on = false;            // open thermocouple → no flame
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(250));
     }
 }
 

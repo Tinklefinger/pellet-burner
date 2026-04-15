@@ -4,6 +4,7 @@ idf_component_register(
         "wifi.cpp"
         "webserver.cpp"
         "settings.cpp"
+        "sensors.cpp"
     INCLUDE_DIRS "."
     REQUIRES
         esp_wifi

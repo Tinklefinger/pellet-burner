@@ -44,8 +44,34 @@ Status: [ ] = pending, [~] = in progress, [x] = done
 ---
 
 ## Phase 4 — Sensor Drivers
-- [ ] DS18B20 OneWire driver → `g_status.water_temp`
-- [ ] MAX6675 SPI driver → `g_status.flame_temp`, `g_status.flame_on`
+- [x] DS18B20 OneWire driver → `g_status.water_temp`
+- [x] MAX6675 SPI driver → `g_status.flame_temp`, `g_status.flame_on`
+
+---
+
+---
+
+## ✦ Hardware Bring-up Checkpoint (after Phase 4, before Phase 5)
+
+This is the right point to wire up the real hardware and verify each
+subsystem works before the state machine depends on it.
+
+**Minimum hardware needed to start:**
+- [ ] ESP32 DevKit powered via USB
+- [ ] SH1106 OLED wired (VCC→3.3V, GND, SDA→GPIO21, SCL→GPIO22)
+- [ ] DS18B20 wired (DATA→GPIO4, 4.7kΩ pull-up to 3.3V)
+- [ ] MAX6675 + K-type thermocouple wired (CS→GPIO5, SCK→GPIO18, MISO→GPIO19)
+- [ ] WiFi credentials set in `Kconfig.projbuild` / NVS
+
+**Verification steps:**
+- [ ] Flash firmware (`idf.py build flash`)
+- [ ] Open serial monitor — confirm DS18B20 reads a plausible water temp
+- [ ] Confirm MAX6675 reads ambient temp (~20 °C) when thermocouple is cold
+- [ ] Open web UI in browser — Live Status shows real temperature values
+- [ ] Confirm `flame_on = false` at room temperature
+
+**Add relays + TRIAC only when Phase 5 (state machine) is ready.**
+AC wiring should be the last step — do all low-voltage testing first.
 
 ---
 
