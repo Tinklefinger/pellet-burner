@@ -123,7 +123,7 @@ No discrete gate resistors, snubber caps, or optocouplers needed — they are al
 
 | Dimmer module pin | Connects to | Load |
 |------------------|-------------|------|
-| VCC | ESP32 3.3V (or 5V) | — |
+| VCC | ESP32 3.3V | — use 3.3V only — see note below |
 | GND | GND bus | — |
 | ZC (zero-cross) | GPIO 35 | — shared output, falling edge ISR |
 | DIM1 | GPIO 33 | Blower motor — variable speed (PWM) |
@@ -133,6 +133,13 @@ No discrete gate resistors, snubber caps, or optocouplers needed — they are al
 | AC IN | Mains L + N (via fuse) | Shared AC input for both channels |
 
 **Passive components:** None on the DC logic side — all built into module.
+
+> ⚠️ **Power the module from ESP32 3.3V, not 5V.**
+> The module supports 3.3V/5V VCC, but the ZC (zero-cross) output feeds back into
+> GPIO35 on the ESP32. If VCC = 5V, the ZC signal can swing to 5V and damage the
+> ESP32 (3.3V-max inputs). Using 3.3V keeps all signal levels safe.
+> The module's logic draws well under 50 mA — the ESP32 3.3V regulator handles it
+> alongside the OLED, DS18B20, and MAX6675 without issue.
 
 **Firmware behaviour:**
 - Blower: PWM duty cycle = fan speed % (0–100), continuously variable
